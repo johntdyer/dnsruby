@@ -59,13 +59,13 @@ module Dnsruby
         
         def from_hash(hash)
           if hash[:priority]
-            @priority = hash[:priority].to_i
+            @priority = hash[:priority].to_int
           end
           if hash[:weight]
-            @weight = hash[:weight].to_i
+            @weight = hash[:weight].to_int
           end
           if hash[:port]
-            @port = hash[:port].to_i
+            @port = hash[:port].to_int
           end
           if hash[:target]
             @target= Name.create(hash[:target])

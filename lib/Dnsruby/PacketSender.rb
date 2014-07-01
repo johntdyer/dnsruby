@@ -211,12 +211,12 @@ module Dnsruby
     def check_ipv6
       begin
         i = IPv4.create(@server)
-#        @src_address = '0.0.0.0'
+        #        @src_address = '0.0.0.0'
         @ipv6=false
       rescue Exception
         begin
           i = IPv6.create(@server)
-#          @src_address6 = '::'
+          #          @src_address6 = '::'
           @ipv6=true
         rescue Exception
           Dnsruby.log.error{"Server is neither IPv4 or IPv6!\n"}
@@ -412,16 +412,15 @@ module Dnsruby
       #            print "#{Time.now} : Sending packet to #{@server} : #{query.question()[0].qname}, #{query.question()[0].qtype}\n"
       # Listen for the response before we send the packet (to avoid any race conditions)
       query_settings = SelectThread::QuerySettings.new(query_bytes, query, @ignore_truncation, client_queue, client_query_id, socket, @server, @port, endtime, udp_packet_size, self)
-      # The select thread will now wait for the response and send that or a timeout
-      # back to the client_queue.
-      st.add_to_select(query_settings)
-      # Now that we're listening for the response, send the query!
       begin
         if (use_tcp)
           lenmsg = [query_bytes.length].pack('n')
           socket.send(lenmsg, 0)
         end
         socket.send(query_bytes, 0)
+        # The select thread will now wait for the response and send that or a timeout
+        # back to the client_queue.
+        st.add_to_select(query_settings)
       rescue Exception => e
         err=IOError.new("Send failed to #{@server}:#{@port} from #{src_address}:#{src_port}, use_tcp=#{use_tcp}, exception : #{e}")
         Dnsruby.log.error{"#{err}"}
@@ -531,6 +530,16 @@ module Dnsruby
             return false
           end
         end
+      end
+      # IF WE GET FORMERR BACK HERE (and we have EDNS0 on) THEN
+      # TRY AGAIN WITH NO OPT RECORDS! (rfc2671 section 5.3)
+      if ((response.header.get_header_rcode == RCode.FORMERR) &&
+            (query.header.arcount > 0))
+        # try resending the message with no OPT record
+        query.remove_additional
+        query.send_raw = true
+        send_async(query, client_queue, client_query_id, false)
+        return false
       end
       if (response.header.tc && !tcp && !@ignore_truncation)
         if (@no_tcp)

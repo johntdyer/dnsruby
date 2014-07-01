@@ -1,5 +1,5 @@
 require 'rake/testtask'
-require 'rake/rdoctask'
+require 'rdoc/task'
 
 Rake::RDocTask.new do |rd|
   rd.rdoc_files.include("lib/**/*.rb")
@@ -7,8 +7,8 @@ Rake::RDocTask.new do |rd|
   rd.main = "Dnsruby"
 #  rd.options << "--ri"
 end
-  
-task :test => :install do 
+
+task :test => :install do
   require 'rake/runtest'
   Rake.run_tests 'test/ts_dnsruby.rb'
 end
